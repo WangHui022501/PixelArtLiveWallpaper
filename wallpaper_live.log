@@ -1,0 +1,11 @@
+[23:30:35] start cfg_len=88
+[23:30:35] embed PID=23592  screen=1920x1080
+[23:30:37] own HWND=5051474 after 1.2s
+[23:30:38] Progman=65866
+[23:30:38] Icons parent: hwnd=65866  class=Progman
+[23:30:38] before: above=4655760(IME) below=4327324(GDI+ Hook Window Class) progman_steps_above=-1
+[23:30:38] after NOTOPMOST: above=3281798(IME) below=4327324(GDI+ Hook Window Class) progman_steps_above=-1
+[23:30:38] SetWindowPos HWND_BOTTOM ok=1
+[23:30:38] after HWND_BOTTOM: above=3281798(IME) below=65866(Progman) progman_steps_above=-1
+[23:30:38] exstyle=0x08010080  TOPMOST=False
+[23:30:39] after re-apply: above=3281798(IME) below=65866(Progman) progman_steps_above=-1

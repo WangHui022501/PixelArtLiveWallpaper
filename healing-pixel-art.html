@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>✦ Pixel World</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0A0D10;--panel:#0D1014;--border:#1E2530;
+  --text:#B2F7BF;--muted:#2E3D30;
+  --cyan:#7BDFF2;--mint:#B2F7BF;--rose:#F2B5D4;--peach:#F7D6B0;
+  --panel-w:230px;--strip-w:32px;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;}
+body{position:relative;font-family:'Segoe UI',system-ui,sans-serif;}
+#c{position:fixed;top:0;left:0;width:100%;height:100%;display:block;image-rendering:pixelated;image-rendering:crisp-edges;}
+
+/* ── Right side panel ── */
+#panel{
+  position:fixed;right:0;top:0;height:100vh;
+  width:calc(var(--panel-w) + var(--strip-w));
+  display:flex;flex-direction:row;
+  background:rgba(10,13,16,.90);backdrop-filter:blur(18px);
+  border-left:1px solid var(--border);
+  transition:width .26s cubic-bezier(.4,0,.2,1);
+  z-index:100;overflow:hidden;
+}
+#panel.mini{width:var(--strip-w);}
+
+/* Strip (always visible thin bar on right edge) */
+#strip{
+  width:var(--strip-w);flex-shrink:0;order:2;
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:10px;cursor:pointer;
+  border-left:1px solid var(--border);
+  transition:background .15s;
+}
+#strip:hover{background:rgba(255,255,255,.02);}
+#stripArrow{color:var(--muted);font-size:13px;transition:color .15s;}
+#strip:hover #stripArrow{color:var(--text);}
+.strip-label{
+  font-family:monospace;font-size:8px;letter-spacing:3px;color:var(--muted);
+  writing-mode:vertical-rl;transform:rotate(180deg);
+}
+
+/* Panel content */
+#panelContent{
+  flex:1;order:1;
+  overflow-y:auto;overflow-x:hidden;
+  padding:16px 12px 20px;
+  display:flex;flex-direction:column;gap:10px;
+  scrollbar-width:thin;scrollbar-color:var(--border) transparent;
+}
+#panel.mini #panelContent{opacity:0;pointer-events:none;}
+
+/* Section labels */
+.slbl{font-size:8px;letter-spacing:3px;color:var(--muted);margin-bottom:2px;}
+
+/* BG tabs — stacked */
+#bgTabs{display:flex;flex-direction:column;gap:4px;}
+.bg-tab{background:transparent;border:1px solid var(--border);border-radius:7px;font-size:11px;padding:5px 10px;cursor:pointer;transition:all .18s;color:var(--muted);text-align:left;}
+.bg-tab:hover{color:var(--text);border-color:var(--muted);}
+.bg-tab.on{border-color:currentColor;color:var(--text);background:color-mix(in srgb,currentColor 8%,transparent);}
+
+/* Category tabs */
+.cat-tabs{display:flex;gap:4px;flex-wrap:wrap;}
+.cat-tab{background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:10px;padding:3px 9px;cursor:pointer;transition:all .15s;}
+.cat-tab.on{border-color:var(--cyan);color:var(--cyan);}
+.cat-tab[data-cat="bloom"].on{border-color:var(--rose);color:var(--rose);}
+.cat-tab:hover{color:var(--text);}
+
+/* Elem chips */
+.elem-row{display:flex;flex-wrap:wrap;gap:4px;min-height:28px;align-items:flex-start;}
+.elem-chip{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:13px;font-size:11px;padding:3px 10px;cursor:pointer;transition:all .18s;color:var(--muted);user-select:none;}
+.elem-chip:hover{border-color:var(--muted);color:var(--text);}
+.elem-chip.on{border-color:currentColor;color:var(--text);background:color-mix(in srgb,currentColor 10%,transparent);}
+
+/* Tags */
+.tag{display:inline-flex;align-items:center;gap:3px;border-radius:12px;font-size:10px;padding:2px 7px 2px 8px;border:1px solid;margin:2px 2px 0 0;}
+.tag .rm{font-size:12px;cursor:pointer;opacity:.5;transition:opacity .15s;}
+.tag .rm:hover{opacity:1;}
+
+/* Preset buttons */
+#presetBtns{display:flex;flex-direction:column;gap:3px;}
+.preset-btn{background:transparent;border:1px solid var(--border);border-radius:7px;font-size:10px;padding:4px 10px;cursor:pointer;transition:all .18s;color:var(--muted);text-align:left;}
+.preset-btn:hover{color:var(--text);border-color:var(--muted);}
+.preset-btn.on{border-color:var(--cyan);color:var(--cyan);background:color-mix(in srgb,var(--cyan) 6%,transparent);}
+
+/* Control buttons */
+.cbtn{background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:10px;padding:4px 10px;cursor:pointer;transition:all .18s;flex:1;}
+.cbtn:hover{border-color:var(--muted);color:var(--text);}
+.cbtn:disabled{opacity:.4;cursor:default;}
+.cbtn.rec{border-color:#F2B5D4;color:#F2B5D4;}
+.btnrow{display:flex;gap:4px;flex-wrap:wrap;}
+
+/* Set wallpaper button */
+#wbtn{
+  width:100%;background:transparent;
+  border:1px solid var(--cyan);border-radius:8px;
+  color:var(--cyan);font-size:11px;padding:7px;
+  cursor:pointer;transition:all .2s;letter-spacing:1px;
+}
+#wbtn:hover{background:color-mix(in srgb,var(--cyan) 10%,transparent);}
+#wbtn:disabled{opacity:.5;cursor:default;}
+#livebtn{
+  width:100%;background:transparent;
+  border:1px solid var(--rose);border-radius:8px;
+  color:var(--rose);font-size:11px;padding:7px;
+  cursor:pointer;transition:all .2s;letter-spacing:1px;margin-top:4px;
+}
+#livebtn:hover{background:color-mix(in srgb,var(--rose) 12%,transparent);}
+#livebtn:disabled{opacity:.5;cursor:default;}
+#livebtn.active{background:color-mix(in srgb,var(--rose) 20%,transparent);border-color:var(--peach);color:var(--peach);}
+
+.divider{height:1px;background:var(--border);margin:2px 0;}
+.info-lbl{font-size:9px;color:var(--muted);letter-spacing:2px;text-align:center;}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<!-- Right-side panel -->
+<div id="panel">
+  <!-- Scrollable content -->
+  <div id="panelContent">
+    <div class="slbl">主题</div>
+    <div id="bgTabs"></div>
+    <div class="divider"></div>
+    <div class="cat-tabs" id="catTabs"></div>
+    <div class="elem-row" id="elemRow"></div>
+    <div class="divider"></div>
+    <div class="slbl">场景</div>
+    <div id="activeTags"></div>
+    <div class="divider"></div>
+    <div class="slbl">预设</div>
+    <div id="presetBtns"></div>
+    <div class="divider"></div>
+    <div class="btnrow">
+      <button class="cbtn" id="pbtn" onclick="togglePause()">⏸</button>
+      <button class="cbtn" onclick="replayBloom()">✦</button>
+      <button class="cbtn" id="sbtn" onclick="cycleSpeed()">♩</button>
+    </div>
+    <div class="btnrow">
+      <button class="cbtn" onclick="exportPNG()">↓ PNG</button>
+      <button class="cbtn" id="gifbtn" onclick="startGIF()">⏺ GIF</button>
+    </div>
+    <div class="btnrow" style="align-items:center;gap:5px;">
+      <button class="cbtn" id="vidbtn" onclick="startVideo()" style="flex:1;">▶ 视频</button>
+      <select id="vidDur" style="background:rgba(10,13,16,.9);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:10px;padding:4px 5px;cursor:pointer;">
+        <option value="8">8秒</option>
+        <option value="15" selected>15秒</option>
+        <option value="30">30秒</option>
+        <option value="60">60秒</option>
+      </select>
+    </div>
+    <div class="divider"></div>
+    <button id="wbtn" onclick="setWallpaper()">🖼 静态壁纸</button>
+    <button id="livebtn" onclick="toggleLiveWallpaper()">🌊 动态壁纸</button>
+    <div class="info-lbl" id="info">✦</div>
+  </div>
+  <!-- Thin strip toggle -->
+  <div id="strip" onclick="togglePanel()">
+    <span id="stripArrow">‹</span>
+    <span class="strip-label">PIXEL</span>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+//  CANVAS
+// ═══════════════════════════════════════════════════
+const C=document.getElementById('c'),ctx=C.getContext('2d');
+const GW=280,GH=180;
+let PX=4,W=GW*PX,H=GH*PX;
+let frame=0,paused=false,loopAcc=0,spd=0.7;
+const SPDS=[0.35,0.7,1.3],SPDL=['✿ 很缓','♩ 缓慢','♪ 轻快'];
+let spdIdx=1;
+
+// ── Panel: minimize / expand ──────────────────────────
+let panelMini=false;
+function togglePanel(){
+  panelMini=!panelMini;
+  document.getElementById('panel').classList.toggle('mini',panelMini);
+  document.getElementById('stripArrow').textContent=panelMini?'›':'‹';
+}
+
+// ── Set Wallpaper ─────────────────────────────────────
+async function setWallpaper(){
+  const btn=document.getElementById('wbtn');
+  btn.disabled=true;btn.textContent='生成中...';
+  render();
+  const dataUrl=C.toDataURL('image/png');
+  try{
+    if(window.pywebview){
+      const r=await window.pywebview.api.set_wallpaper(dataUrl);
+      btn.textContent=r.ok?'✓ 壁纸已设置':'✗ 设置失败';
+    } else {
+      // fallback: download PNG
+      const a=document.createElement('a');a.href=dataUrl;a.download='pixel-wallpaper.png';a.click();
+      btn.textContent='✓ 已下载 PNG';
+    }
+  }catch(e){btn.textContent='✗ 出错了';}
+  setTimeout(()=>{btn.disabled=false;btn.textContent='🖼 设为壁纸';},2500);
+}
+
+// ── Live Wallpaper ────────────────────────────────────
+let _liveActive=false;
+
+// Restore button state if wallpaper is already running from a previous session
+async function _checkLiveStatus(){
+  if(!window.pywebview)return;
+  try{
+    const r=await window.pywebview.api.live_wallpaper_running();
+    if(r.running){
+      _liveActive=true;
+      const btn=document.getElementById('livebtn');
+      btn.classList.add('active');
+      btn.textContent='■ 停止动态壁纸';
+    }
+  }catch(e){}
+}
+if(window.pywebview){_checkLiveStatus();}
+else{window.addEventListener('pywebviewready',_checkLiveStatus,{once:true});}
+
+async function toggleLiveWallpaper(){
+  const btn=document.getElementById('livebtn');
+  btn.disabled=true;
+  if(_liveActive){
+    // Stop
+    if(window.pywebview){
+      await window.pywebview.api.stop_live_wallpaper();
+    }
+    _liveActive=false;
+    btn.classList.remove('active');
+    btn.textContent='🌊 动态壁纸';
+    btn.disabled=false;
+    return;
+  }
+  btn.textContent='启动中...';
+  const cfg=btoa(JSON.stringify({bg:curBG,elems:[...selected]}));
+  if(window.pywebview){
+    const r=await window.pywebview.api.set_live_wallpaper(cfg);
+    if(r.ok){
+      _liveActive=true;
+      btn.classList.add('active');
+      btn.textContent='■ 停止动态壁纸';
+    }else{
+      btn.textContent='✗ 启动失败';
+      setTimeout(()=>btn.textContent='🌊 动态壁纸',2000);
+    }
+  }else{
+    btn.textContent='✗ 需通过 launch_app.bat 启动';
+    setTimeout(()=>btn.textContent='🌊 动态壁纸',2500);
+  }
+  btn.disabled=false;
+}
+
+// ── Canvas sizing ─────────────────────────────────────
+function fitCanvas(){
+  const sw=window.innerWidth,sh=window.innerHeight;
+  const scale=Math.max(Math.floor(Math.min(sw/GW,sh/GH)),1);
+  PX=scale;W=GW*PX;H=GH*PX;
+  C.width=W;C.height=H;
+  C.style.width=sw+'px';C.style.height=sh+'px';
+}
+fitCanvas();
+window.addEventListener('resize',()=>{fitCanvas();buildScene();});
+
+// ═══════════════════════════════════════════════════
+//  PALETTE — Guava + Cotton Candy combined
+// ═══════════════════════════════════════════════════
+const G={
+  // ── Guava ────────────────────────────────────────
+  coral:   '#FA7370', salmon:  '#FBA685', pink:    '#FCA3AD',
+  crimson: '#F65368', blush:   '#FEADBD',
+  dkGreen: '#60A61F', olive:   '#72A424', lime:    '#8BC148',
+  ltLime:  '#BFE97B', paleGrn: '#CBEFAA', sage:    '#B4BD9A',
+  yellow:  '#DFCE59', ltYellow:'#F5EE9A', beige:   '#E3DAB7',
+  offWhite:'#ECEDDF', vPale:   '#EEF2F5', pinkWht: '#E6B4C4',
+  coolGray:'#D5D1CD',
+  dkCoral: '#7A2828', dkGrn:   '#2A4A10', dkPink:  '#882244',
+  dkYellow:'#5A5010', dkSage:  '#445540',
+  // ── Cotton Candy ─────────────────────────────────
+  cc_cyan: '#7BDFF2', // bright sky blue
+  cc_mint: '#B2F7BF', // soft mint
+  cc_ice:  '#EFF7F6', // near white / ice
+  cc_peach:'#F7D6B0', // warm peach
+  cc_rose: '#F2B5D4', // rose pink
+  cc_lav:  '#B0AACF', // periwinkle / lavender
+  cc_dk_cyan: '#0D5F72', cc_dk_mint: '#1A5A30',
+  cc_dk_rose: '#7A2856', cc_dk_peach:'#7A4020',
+  cc_dk_lav:  '#3A3568',
+};
+
+// ═══════════════════════════════════════════════════
+//  DRAW CORE
+// ═══════════════════════════════════════════════════
+function drawSprite(data,colors,vx,vy,flipX=false,alpha=1){
+  if(alpha<=0)return;
+  const p=ctx.globalAlpha;ctx.globalAlpha=p*Math.min(1,alpha);
+  const rows=data.length,cols=data[0].length;
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+    const ci=data[r][c];if(!ci)continue;
+    ctx.fillStyle=colors[ci];
+    ctx.fillRect(Math.round((vx+(flipX?cols-1-c:c))*PX),Math.round((vy+r)*PX),PX,PX);
+  }
+  ctx.globalAlpha=p;
+}
+function drawSpriteAt(data,colors,ax,ay,ps,flipX=false,alpha=1){
+  if(alpha<=0||ps<1)return;
+  const cols=data[0].length,rows=data.length;
+  const ox=Math.round(ax-cols*ps/2),oy=Math.round(ay-rows*ps/2);
+  const p=ctx.globalAlpha;ctx.globalAlpha=p*Math.min(1,alpha);
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+    const ci=data[r][c];if(!ci)continue;
+    ctx.fillStyle=colors[ci];
+    ctx.fillRect(ox+(flipX?cols-1-c:c)*ps,oy+r*ps,ps,ps);
+  }
+  ctx.globalAlpha=p;
+}
+function bloomVal(ph){
+  const n=((ph%(Math.PI*2))+Math.PI*2)%(Math.PI*2)/(Math.PI*2);
+  if(n<0.18)return n/0.18;if(n<0.50)return 1;
+  if(n<0.68)return 1-(n-0.50)/0.18;return 0;
+}
+
+// ═══════════════════════════════════════════════════
+//  SPRITE FRAMES (shared geometry)
+// ═══════════════════════════════════════════════════
+// Bloom frames: STRICTLY 2 colors — index 1 (light fill) + index 2 (medium accent)
+// Upgraded to 14×14 / 14×12 for finer pixel detail. maxPx reduced to compensate.
+// Lotus 14×14 — 8-petal mandala, 3-tone: outer-rim(3) / petal-body(2) / inner-glow(1)
+const F12=[
+  [0,0,0,3,3,3,3,3,3,3,3,0,0,0],
+  [0,0,3,2,2,3,2,2,2,3,2,2,3,0],
+  [0,3,2,2,3,2,2,2,2,3,2,2,2,3],
+  [3,2,2,3,2,2,2,2,2,2,3,2,2,3],
+  [3,2,3,2,2,2,2,1,2,2,2,3,2,3],
+  [3,3,2,2,2,2,1,1,1,2,2,2,3,3],
+  [3,2,2,2,2,1,1,1,1,1,2,2,2,3],
+  [3,2,2,2,2,1,1,1,1,1,2,2,2,3],
+  [3,3,2,2,2,2,1,1,1,2,2,2,3,3],
+  [3,2,3,2,2,2,2,1,2,2,2,3,2,3],
+  [3,2,2,3,2,2,2,2,2,2,3,2,2,3],
+  [0,3,2,2,3,2,2,2,2,3,2,2,2,3],
+  [0,0,3,2,2,3,2,2,2,3,2,2,3,0],
+  [0,0,0,3,3,3,3,3,3,3,3,0,0,0],
+];
+// Cherry blossom 14×12 — 4-petal, 3-tone: outer-rim(3) / petal-body(2) / center-glow(1)
+const F10=[
+  [0,0,0,0,3,3,3,3,3,3,0,0,0,0],
+  [0,0,0,3,2,2,2,2,2,2,3,0,0,0],
+  [0,0,3,2,2,3,2,2,3,2,2,3,0,0],
+  [0,3,2,2,3,2,2,2,2,3,2,2,3,0],
+  [3,2,2,3,2,2,1,1,2,2,3,2,2,3],
+  [3,2,3,2,2,1,1,1,1,2,2,3,2,3],
+  [3,2,3,2,2,1,1,1,1,2,2,3,2,3],
+  [3,2,2,3,2,2,1,1,2,2,3,2,2,3],
+  [0,3,2,2,3,2,2,2,2,3,2,2,3,0],
+  [0,0,3,2,2,3,2,2,3,2,2,3,0,0],
+  [0,0,0,3,2,2,2,2,2,2,3,0,0,0],
+  [0,0,0,0,3,3,3,3,3,3,0,0,0,0],
+];
+// Mushroom 14×12 — spotted cap, 3-tone: outer-rim(3) / cap-body(2) / bright-spots(1)
+const FM=[
+  [0,0,0,3,3,3,3,3,3,3,3,0,0,0],
+  [0,0,3,2,2,2,1,1,2,2,2,3,0,0],
+  [0,3,2,2,1,2,2,2,2,1,2,2,3,0],
+  [3,2,2,2,2,2,2,2,2,2,2,2,2,3],
+  [3,2,1,2,2,2,2,2,2,2,2,2,1,3],
+  [3,2,2,2,2,2,2,2,2,2,2,2,2,3],
+  [3,2,2,1,2,2,2,2,2,2,1,2,2,3],
+  [3,2,2,2,2,2,2,2,2,2,2,2,2,3],
+  [3,2,1,2,2,2,2,2,2,2,2,2,1,3],
+  [3,2,2,2,2,2,2,2,2,2,2,2,2,3],
+  [0,3,2,2,2,2,2,2,2,2,2,2,3,0],
+  [0,0,3,3,3,3,3,3,3,3,3,3,0,0],
+];
+// Cloud big 14×7 — simple clean pill cloud: rim(3) / body(2) / top-highlight(1)
+const FCB=[
+  [0,0,0,3,3,3,3,3,3,3,3,0,0,0],
+  [0,0,3,2,1,1,1,1,1,1,2,3,0,0],
+  [0,3,2,1,1,2,2,2,2,1,1,2,3,0],
+  [3,2,2,2,2,2,2,2,2,2,2,2,2,3],
+  [3,2,2,2,2,2,2,2,2,2,2,2,2,3],
+  [0,3,3,2,2,2,2,2,2,2,2,3,3,0],
+  [0,0,0,3,3,3,3,3,3,3,3,0,0,0],
+];
+// Jellyfish 14×12 — dome + tentacles, 3-tone: dome-rim(3) / dome-body(2) / bioluminescent-core(1)
+const FJ=[
+  [0,0,0,3,3,3,3,3,3,3,3,0,0,0],
+  [0,0,3,2,2,2,2,2,2,2,2,3,0,0],
+  [0,3,2,2,1,1,1,1,1,1,2,2,3,0],
+  [3,2,2,1,1,1,1,1,1,1,1,2,2,3],
+  [3,2,2,1,1,2,2,2,2,1,1,2,2,3],
+  [0,3,2,2,2,2,2,2,2,2,2,2,3,0],
+  [0,0,3,3,3,3,3,3,3,3,3,3,0,0],
+  [0,0,0,3,0,3,0,3,0,3,0,3,0,0],
+  [0,0,0,0,3,0,3,0,3,0,3,0,0,0],
+  [0,0,0,0,0,3,0,3,0,3,0,0,0,0],
+  [0,0,0,0,0,0,3,0,3,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+];
+// Star 5×5 — 2 frames: bright cross ↔ dim dot (twinkling)
+const FSTAR_A=[[0,0,2,0,0],[0,0,1,0,0],[2,1,1,1,2],[0,0,1,0,0],[0,0,2,0,0]];
+const FSTAR_B=[[0,0,0,0,0],[0,0,2,0,0],[0,2,1,2,0],[0,0,2,0,0],[0,0,0,0,0]];
+// Falling petal 4×4 — 2 frames: slight tumble rotation
+const FPETAL_A=[[0,1,2,0],[1,2,1,0],[0,1,2,1],[0,0,1,0]];
+const FPETAL_B=[[0,0,1,0],[0,1,2,1],[1,2,1,0],[0,1,0,0]];
+const FF0=[[3,3,0,0,0,0,0,0,0,0,0,0],[3,1,3,1,1,1,0,0,0,0,0,0],[0,3,1,2,2,1,1,1,0,0,0,0],[0,0,1,2,2,2,2,1,1,4,3,0],[0,0,1,2,2,2,2,1,1,0,0,0],[0,3,1,2,2,1,1,1,0,0,0,0],[3,1,3,1,1,1,0,0,0,0,0,0],[3,3,0,0,0,0,0,0,0,0,0,0]];
+const FF1=[[0,3,3,0,0,0,0,0,0,0,0,0],[3,1,0,1,1,1,0,0,0,0,0,0],[3,0,1,2,2,1,1,1,0,0,0,0],[0,0,1,2,2,2,2,1,1,4,3,0],[0,0,1,2,2,2,2,1,1,0,0,0],[3,0,1,2,2,1,1,1,0,0,0,0],[3,1,0,1,1,1,0,0,0,0,0,0],[0,3,3,0,0,0,0,0,0,0,0,0]];
+const SH0=[[0,0,3,3,3,0,0,0],[0,3,1,1,1,3,0,0],[0,3,1,2,1,3,0,0],[0,0,3,1,1,3,0,0],[0,0,3,1,1,1,3,0],[0,3,1,1,1,1,3,0],[0,3,1,1,1,3,0,0],[0,0,3,1,1,3,0,0],[0,0,0,3,1,3,0,0],[0,0,0,3,1,1,3,0],[0,0,0,0,3,1,3,0],[0,0,0,0,0,3,0,0]];
+const SH1=[[0,0,3,3,3,0,0,0],[0,3,1,1,1,3,0,0],[0,3,1,2,1,3,0,0],[0,0,3,1,1,3,3,0],[0,0,3,1,1,1,1,3],[0,3,1,1,1,1,3,0],[0,3,1,1,1,3,0,0],[0,0,3,1,1,3,0,0],[0,0,3,1,1,1,3,0],[0,0,0,3,1,1,3,0],[0,0,0,0,3,3,0,0],[0,0,0,0,0,0,0,0]];
+
+// ═══════════════════════════════════════════════════
+//  SPRITES — Guava + Cotton Candy variants
+// ═══════════════════════════════════════════════════
+const SP={};
+// ── Blooms — 3-tone: [null, inner-glow(1), body(2), outer-rim(3)] ─────────
+// index 1 = brightest center/highlight, index 2 = main body, index 3 = deep outer edge
+// All hex taken directly from Guava or Cotton Candy palette swatches.
+// Lotus (8-petal 14×14) ────────────────────────
+SP.lotus     ={frames:[F12],colors:[null,'#FEADBD','#FCA3AD','#FA7370']};// blush→pale-pink→coral
+SP.lotus_b   ={frames:[F12],colors:[null,'#CBEFAA','#8BC148','#72A424']};// pale-lime→lime→olive
+SP.lotus_c   ={frames:[F12],colors:[null,'#EFF7F6','#7BDFF2','#B0AACF']};// ice→cyan→lavender
+SP.lotus_lt  ={frames:[F12],colors:[null,'#EEF2F5','#FEADBD','#FCA3AD']};// near-white→blush→pale-pink
+// Cherry blossom (4-petal 14×12) ───────────────
+SP.cherry    ={frames:[F10],colors:[null,'#EEF2F5','#FEADBD','#F65368']};// near-white→blush→crimson
+SP.cherry_b  ={frames:[F10],colors:[null,'#EEF2F5','#F5EE9A','#DFCE59']};// near-white→pale-yellow→gold
+SP.cherry_c  ={frames:[F10],colors:[null,'#EFF7F6','#B2F7BF','#7BDFF2']};// ice→mint→cyan
+SP.cherry_lt ={frames:[F10],colors:[null,'#ECEDDF','#EEF2F5','#FEADBD']};// off-white→near-white→blush
+// Mushroom (spotted cap 14×12) ─────────────────
+SP.mushroom  ={frames:[FM], colors:[null,'#FEADBD','#FBA685','#FA7370']};// blush-spot→peach→coral
+SP.mushroom_b={frames:[FM], colors:[null,'#CBEFAA','#BFE97B','#8BC148']};// pale-lime→ltLime→lime
+SP.mushroom_c={frames:[FM], colors:[null,'#EFF7F6','#F2B5D4','#B0AACF']};// ice→rose→lavender
+SP.mushroom_lt={frames:[FM],colors:[null,'#EEF2F5','#FEADBD','#FBA685']};// near-white→blush→peach
+// Cloud big (puffy 16×8) ───────────────────────
+SP.cloud_b   ={frames:[FCB],colors:[null,'#EEF2F5','#ECEDDF','#D5D1CD']};// near-white→off-white→coolGray
+SP.cloud_b_c ={frames:[FCB],colors:[null,'#EFF7F6','#B2F7BF','#7BDFF2']};// ice→mint→cyan
+SP.cloud_b_lt={frames:[FCB],colors:[null,'#ECEDDF','#EEF2F5','#E3DAB7']};// off-white→near-white→beige
+// Jellyfish (dome+tentacles 14×12) ─────────────
+SP.jellyfish ={frames:[FJ], colors:[null,'#EFF7F6','#FEADBD','#F2B5D4']};// ice-glow→blush→rose
+SP.jellyfish_b={frames:[FJ],colors:[null,'#EFF7F6','#CBEFAA','#8BC148']};// ice-glow→pale-lime→lime
+SP.jellyfish_c={frames:[FJ],colors:[null,'#EFF7F6','#7BDFF2','#B0AACF']};// ice-glow→cyan→lavender
+SP.jellyfish_lt={frames:[FJ],colors:[null,'#ECEDDF','#EFF7F6','#FEADBD']};// very-light→ice→blush
+// ── Ground pads ───────────────────────────────────
+SP.lilypad={
+  frames:[[
+    [0,0,0,0,3,3,0,0,3,3,0,0,0,0],[0,0,0,3,1,1,0,0,1,1,3,0,0,0],
+    [0,0,3,1,1,1,1,1,1,1,1,3,0,0],[0,3,1,1,2,1,1,1,1,2,1,1,3,0],
+    [0,3,1,1,1,1,1,1,1,1,1,1,3,0],[3,1,1,1,1,1,1,1,1,1,1,1,1,3],
+    [3,1,1,1,1,1,1,1,1,1,1,1,1,3],[0,3,1,1,2,1,1,1,1,2,1,1,3,0],
+    [0,0,3,1,1,1,1,1,1,1,1,3,0,0],[0,0,0,3,1,1,1,1,1,1,3,0,0,0],
+    [0,0,0,0,3,3,3,3,3,3,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+  ]],colors:[null,G.olive,G.ltLime,G.dkGrn]};
+SP.lilypad_c={
+  frames:[SP.lilypad.frames[0]],
+  colors:[null,G.cc_mint,G.cc_ice,G.cc_dk_mint]};
+SP.petals={
+  frames:[[[0,0,3,3,0,0,0,3,3,0,0,0],[0,3,1,1,3,0,3,1,1,3,0,0],[3,1,1,1,1,3,1,1,1,1,3,0],[3,1,2,1,1,1,1,1,2,1,3,0],[0,3,1,1,1,1,1,1,1,3,0,0],[0,0,3,3,1,3,3,1,3,0,0,0],[0,0,0,3,1,1,1,3,0,0,0,0],[0,0,0,0,3,3,3,0,0,0,0,0]]],
+  colors:[null,G.pink,G.blush,G.dkPink]};
+SP.petals_c={frames:[SP.petals.frames[0]],colors:[null,G.cc_rose,G.cc_peach,G.cc_dk_rose]};
+SP.fern={
+  frames:[[[0,0,3,0,0,0,0,0,3,0,0,0],[0,3,1,3,0,0,0,3,1,3,0,0],[3,1,1,1,3,0,3,1,1,1,3,0],[0,3,1,1,1,3,1,1,1,2,3,0],[0,0,3,1,1,1,1,1,2,3,0,0],[0,0,0,3,1,1,1,1,3,0,0,0],[0,0,0,0,3,1,1,3,0,0,0,0],[0,0,0,0,0,3,3,0,0,0,0,0]]],
+  colors:[null,G.dkGreen,G.ltLime,G.dkGrn]};
+SP.cloud_s={
+  frames:[[[0,0,0,3,3,3,3,3,3,3,0,0,0,0,0,0],[0,0,3,1,1,1,1,1,1,1,3,0,0,0,0,0],[0,3,1,1,2,1,1,1,2,1,1,3,3,0,0,0],[3,1,1,1,1,1,1,1,1,1,1,1,1,3,0,0],[0,3,3,3,3,3,3,3,3,3,3,3,3,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]],
+  colors:[null,G.vPale,G.offWhite,G.sage]};
+SP.cloud_s_c={frames:[SP.cloud_s.frames[0]],colors:[null,G.cc_cyan,G.cc_mint,G.cc_dk_cyan]};
+SP.coral={
+  frames:[[[0,0,0,0,3,3,0,0,0,0],[0,0,0,3,1,1,3,0,0,0],[0,0,3,1,1,1,1,3,0,0],[0,3,1,1,2,2,1,1,3,0],[3,1,1,2,2,2,2,1,1,3],[3,1,2,2,2,2,2,2,1,3],[0,3,1,2,2,2,2,1,3,0],[0,0,3,1,1,1,1,3,0,0],[0,0,0,3,1,1,3,0,0,0],[0,0,0,0,3,3,0,0,0,0]]],
+  colors:[null,G.coral,G.salmon,G.dkCoral]};
+SP.coral_c={frames:[SP.coral.frames[0]],colors:[null,G.cc_rose,G.cc_peach,G.cc_dk_rose]};
+// ── Movers ────────────────────────────────────────
+SP.goldfish  ={frames:[FF0,FF1],colors:[null,G.coral,    G.salmon,    G.dkCoral,    '#222']};
+SP.goldfish_c={frames:[FF0,FF1],colors:[null,G.cc_cyan,  G.cc_ice,    G.cc_dk_cyan, '#222']};
+SP.koi       ={frames:[FF0,FF1],colors:[null,G.crimson,  G.offWhite,  G.dkCoral,    '#222']};
+SP.koi2      ={frames:[FF0,FF1],colors:[null,G.lime,     G.paleGrn,   G.dkGrn,      '#222']};
+SP.koi_c     ={frames:[FF0,FF1],colors:[null,G.cc_peach, G.cc_rose,   G.cc_dk_peach,'#222']};// sunset koi
+SP.koi_lav   ={frames:[FF0,FF1],colors:[null,G.cc_lav,   G.cc_ice,    G.cc_dk_lav,  '#222']};// lavender koi
+SP.fish_t    ={frames:[FF0,FF1],colors:[null,G.lime,     G.yellow,    G.dkGrn,      '#222']};
+SP.fish_t_c  ={frames:[FF0,FF1],colors:[null,G.cc_cyan,  G.cc_peach,  G.cc_dk_cyan, '#222']};
+SP.seahorse  ={frames:[SH0,SH1],colors:[null,G.olive,    G.ltLime,    G.dkGrn]};
+SP.seahorse_c={frames:[SH0,SH1],colors:[null,G.cc_rose,  G.cc_ice,    G.cc_dk_rose]};
+SP.dragonfly={
+  frames:[
+    [[1,1,1,0,3,3,3,0,1,1,1,0],[1,2,1,3,3,3,3,3,1,2,1,0],[0,1,1,3,3,4,4,3,1,1,0,0],[0,0,0,3,4,4,4,3,0,0,0,0],[0,0,0,3,4,0,4,3,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0]],
+    [[0,1,1,0,3,3,3,0,1,1,0,0],[1,2,1,3,3,3,3,3,1,2,1,0],[1,1,1,3,3,4,4,3,1,1,1,0],[0,0,0,3,4,4,4,3,0,0,0,0],[0,0,0,3,4,0,4,3,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0]],
+  ],colors:[null,G.ltLime,G.paleGrn,G.olive,G.yellow]};
+SP.dragonfly_c={frames:SP.dragonfly.frames,colors:[null,G.cc_cyan,G.cc_mint,G.cc_dk_cyan,G.cc_ice]};
+SP.rabbit={
+  frames:[
+    [[0,3,0,0,0,0,3,0,0,0],[0,3,0,0,0,0,3,0,0,0],[0,2,0,0,0,0,2,0,0,0],[0,3,1,1,1,1,1,1,3,0],[0,3,1,1,4,4,1,1,3,0],[0,0,3,1,1,1,1,3,0,0],[0,3,1,1,1,1,1,1,3,0],[0,0,3,3,1,1,3,3,0,0]],
+    [[0,0,3,0,0,3,0,0,0,0],[0,0,3,0,0,3,0,0,0,0],[0,0,2,0,0,2,0,0,0,0],[0,3,1,1,1,1,1,1,3,0],[0,3,1,1,4,4,1,1,3,0],[0,0,3,1,1,1,1,3,0,0],[0,0,3,1,1,1,1,3,0,0],[0,3,3,0,0,0,3,3,0,0]],
+  ],colors:[null,G.offWhite,G.pink,G.dkSage,'#222']};
+SP.rabbit_c={frames:SP.rabbit.frames,colors:[null,G.cc_ice,G.cc_rose,G.cc_dk_lav,'#222']};
+SP.butterfly={
+  frames:[
+    // Frame A — wings spread wide (13×7)
+    [[0,1,1,1,1,0,0,0,1,1,1,1,0],[1,3,1,1,3,1,0,1,3,1,1,3,1],[1,3,2,3,3,3,4,3,3,3,2,3,1],[0,1,3,2,3,3,4,3,3,2,3,1,0],[0,0,1,3,3,0,0,0,3,3,1,0,0],[0,0,0,1,3,0,0,0,3,1,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0]],
+    // Frame B — wings half-closed (13×7)
+    [[0,0,1,1,1,0,0,0,1,1,1,0,0],[0,1,3,1,3,1,0,1,3,1,3,1,0],[0,1,2,3,3,3,4,3,3,3,2,1,0],[0,0,1,2,3,3,4,3,3,2,1,0,0],[0,0,0,1,3,0,0,0,3,1,0,0,0],[0,0,0,0,1,0,0,0,1,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0]],
+  ],colors:[null,G.crimson,G.blush,G.dkPink,G.coral]};
+SP.butterfly_b={frames:SP.butterfly.frames,colors:[null,G.lime,G.ltYellow,G.dkGrn,G.yellow]};
+SP.butterfly_c={frames:SP.butterfly.frames,colors:[null,G.cc_lav,G.cc_rose,G.cc_dk_lav,G.cc_peach]};
+SP.bird={
+  frames:[
+    [[0,3,3,0,0,0,0,0,0,0],[3,1,1,3,0,0,0,0,0,0],[3,1,1,1,3,2,2,3,0,0],[0,3,1,1,1,2,2,1,3,0],[0,0,3,3,3,3,3,3,0,0],[0,0,0,0,0,0,0,0,0,0]],
+    [[0,0,0,3,3,0,3,3,0,0],[0,0,3,1,1,3,1,1,3,0],[0,3,1,1,1,1,1,1,1,3],[0,0,3,1,1,1,1,1,3,0],[0,0,0,3,3,3,3,3,0,0],[0,0,0,0,0,0,0,0,0,0]],
+  ],colors:[null,G.yellow,G.ltYellow,G.dkYellow]};
+SP.bird_c={frames:SP.bird.frames,colors:[null,G.cc_peach,G.cc_rose,G.cc_dk_peach]};
+SP.firefly={frames:[[[0,3,3,0],[3,1,1,3],[3,1,1,3],[0,3,3,0]],[[0,0,0,0],[0,3,3,0],[0,3,3,0],[0,0,0,0]]],colors:[null,G.ltYellow,G.vPale,G.dkYellow]};
+SP.firefly_c={frames:SP.firefly.frames,colors:[null,G.cc_cyan,G.cc_ice,G.cc_dk_cyan]};
+// Star (twinkling) — 2-frame cross ↔ dot
+SP.star  ={frames:[FSTAR_A,FSTAR_B],colors:[null,G.ltYellow,G.yellow]};// guava: pale-yellow center, gold cross
+SP.star_c={frames:[FSTAR_A,FSTAR_B],colors:[null,G.cc_ice,G.cc_cyan]};// cotton: ice center, cyan cross
+// Falling petal — 2-frame slow tumble
+SP.petal_f  ={frames:[FPETAL_A,FPETAL_B],colors:[null,G.blush,G.pink]};// guava: blush→pink
+SP.petal_f_c={frames:[FPETAL_A,FPETAL_B],colors:[null,G.cc_ice,G.cc_rose]};// cotton: ice→rose
+
+// ═══════════════════════════════════════════════════
+//  CATALOG
+// ═══════════════════════════════════════════════════
+const CATS={
+  bloom:  {label:'✦ 盛放',  color:'#F2B5D4',single:true},
+  mover:  {label:'🐠 生物',  color:'#7BDFF2',single:false},
+  pad:    {label:'🌿 地面',  color:'#B2F7BF',single:false},
+  ambient:{label:'✨ 特效',  color:'#F7D6B0',single:false},
+};
+const ELEMS={
+  // sprSet last item is always the _lt (lighter accent) variant
+  lotus:    {cat:'bloom',icon:'🪷',label:'莲花',  sprSet:['lotus','lotus_b','lotus_c','lotus_lt'],              maxPx:4},
+  cherry:   {cat:'bloom',icon:'🌸',label:'樱花',  sprSet:['cherry','cherry_b','cherry_c','cherry_lt'],          maxPx:4},
+  mushroom: {cat:'bloom',icon:'🍄',label:'蘑菇',  sprSet:['mushroom','mushroom_b','mushroom_c','mushroom_lt'],  maxPx:4},
+  cloud_big:{cat:'bloom',icon:'☁️',label:'云朵',  sprSet:['cloud_b','cloud_b_c','cloud_b_lt'],                 maxPx:5},
+  jellyfish:{cat:'bloom',icon:'🪼',label:'水母',  sprSet:['jellyfish','jellyfish_b','jellyfish_c','jellyfish_lt'],maxPx:4},
+  goldfish: {cat:'mover',icon:'🐟',label:'金鱼',  sprSet:['goldfish','goldfish_c'],    speed:[0.16,0.28]},
+  koi:      {cat:'mover',icon:'🐠',label:'锦鲤',  sprSet:['koi','koi2','koi_c','koi_lav'],speed:[0.14,0.24]},
+  rabbit:   {cat:'mover',icon:'🐰',label:'兔子',  sprSet:['rabbit','rabbit_c'],        speed:[0.10,0.18]},
+  butterfly:{cat:'mover',icon:'🦋',label:'蝴蝶',  sprSet:['butterfly','butterfly_b','butterfly_c'],speed:[0.08,0.15]},
+  bird:     {cat:'mover',icon:'🐦',label:'小鸟',  sprSet:['bird','bird_c'],            speed:[0.12,0.22]},
+  fish_t:   {cat:'mover',icon:'🐡',label:'热带鱼',sprSet:['fish_t','fish_t_c'],        speed:[0.10,0.20]},
+  seahorse: {cat:'mover',icon:'🦀',label:'海马',  sprSet:['seahorse','seahorse_c'],    speed:[0.05,0.10]},
+  lilypad:  {cat:'pad',  icon:'🍃',label:'荷叶',  sprSet:['lilypad','lilypad_c']},
+  petals:   {cat:'pad',  icon:'🌺',label:'花瓣地',sprSet:['petals','petals_c']},
+  fern:     {cat:'pad',  icon:'🌿',label:'蕨叶',  sprSet:['fern']},
+  cloud_sm: {cat:'pad',  icon:'🌤️',label:'小云',  sprSet:['cloud_s','cloud_s_c']},
+  coral:    {cat:'pad',  icon:'🪸',label:'珊瑚',  sprSet:['coral','coral_c']},
+  dragonfly: {cat:'mover', icon:'🦗',label:'蜻蜓',   sprSet:['dragonfly','dragonfly_c'], speed:[0.08,0.16]},
+  firefly:   {cat:'ambient',icon:'✨',label:'萤火虫', sprSet:['firefly','firefly_c']},
+  star:      {cat:'ambient',icon:'⭐',label:'星星',   sprSet:['star','star_c']},
+  fall_petal:{cat:'ambient',icon:'🌸',label:'飘落花瓣',sprSet:['petal_f','petal_f_c']},
+};
+
+// ═══════════════════════════════════════════════════
+//  BACKGROUNDS — 6 total (Guava 4 + Cotton Candy 2)
+// ═══════════════════════════════════════════════════
+const BGS={
+  pond:  {icon:'🌿',label:'番石榴园',color:'#8BC148',bloomSpeed:0.0066},
+  garden:{icon:'🍓',label:'果肉花园',color:'#FCA3AD',bloomSpeed:0.0058},
+  sky:   {icon:'☀️',label:'晨光天空',color:'#DFCE59',bloomSpeed:0.0048},
+  ocean: {icon:'🌲',label:'深林幽境',color:'#72A424',bloomSpeed:0.0060},
+  water: {icon:'🌊',label:'天青水面',color:'#7BDFF2',bloomSpeed:0.0062},// Cotton Candy cyan
+  sunset:{icon:'🌅',label:'暖霞天空',color:'#F7D6B0',bloomSpeed:0.0053},// Cotton Candy peach
+};
+let curBG='water';
+
+function drawBG(){
+  ({pond:drawPond,garden:drawGarden,sky:drawSky,ocean:drawForest,water:drawWater,sunset:drawSunset})[curBG]();
+}
+// Guava Pond — green
+function drawPond(){
+  const g=ctx.createRadialGradient(W*.44,H*.42,0,W*.5,H*.5,W*.80);
+  g.addColorStop(0,G.paleGrn);g.addColorStop(.5,G.lime);g.addColorStop(1,G.olive);
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  rippleOverlay(G.paleGrn,.09);
+}
+// Guava Garden — coral pink
+function drawGarden(){
+  const g=ctx.createLinearGradient(0,0,W,H);
+  g.addColorStop(0,G.blush);g.addColorStop(.5,G.pink);g.addColorStop(1,G.salmon);
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  particleOverlay(G.vPale,.45);
+}
+// Guava Sky — yellow morning
+function drawSky(){
+  const g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,G.ltYellow);g.addColorStop(.5,G.paleGrn);g.addColorStop(1,G.vPale);
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  const sg=ctx.createRadialGradient(W*.80,H*.15,0,W*.80,H*.15,H*.55);
+  sg.addColorStop(0,'rgba(223,206,89,.28)');sg.addColorStop(1,'rgba(223,206,89,0)');
+  ctx.fillStyle=sg;ctx.fillRect(0,0,W,H);
+  starOverlay(G.ltYellow,.35);
+}
+// Guava Forest — dark green
+function drawForest(){
+  const g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#0A1A06');g.addColorStop(.4,G.dkGreen);g.addColorStop(1,G.olive);
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  particleOverlay(G.ltLime,.28);
+}
+// Cotton Candy Water — cyan/mint lagoon
+function drawWater(){
+  const g=ctx.createRadialGradient(W*.50,H*.45,0,W*.5,H*.5,W*.85);
+  g.addColorStop(0,G.cc_ice);g.addColorStop(.4,G.cc_mint);g.addColorStop(.8,G.cc_cyan);g.addColorStop(1,'#2A8AA4');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  // Shimmering ripple lines
+  for(let row=0;row<GH;row+=3){
+    const wave=Math.sin(row*.25+frame*.012)*.5+.5;
+    const alpha=wave*.06;
+    if(alpha>.01){ctx.fillStyle=`rgba(239,247,246,${alpha.toFixed(2)})`;ctx.fillRect(0,row*PX,W,PX);}
+  }
+  rippleOverlay(G.cc_ice,.12);
+}
+// Cotton Candy Sunset — peach/rose/lavender
+function drawSunset(){
+  const g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,G.cc_lav);g.addColorStop(.4,G.cc_rose);g.addColorStop(.75,G.cc_peach);g.addColorStop(1,'#F0C890');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  // Sun glow
+  const sg=ctx.createRadialGradient(W*.78,H*.12,0,W*.78,H*.12,H*.50);
+  sg.addColorStop(0,'rgba(247,214,176,.50)');sg.addColorStop(1,'rgba(247,214,176,0)');
+  ctx.fillStyle=sg;ctx.fillRect(0,0,W,H);
+  particleOverlay(G.cc_rose,.40);
+}
+// Shared overlay helpers
+function rippleOverlay(color,a){
+  for(const[vx,vy]of[[14,9],[60,7],[110,34],[44,58],[102,66],[64,77],[72,29],[49,70],[97,41],[25,60]]){
+    const fl=Math.sin(frame*.025+vx*.26+vy*.18)*.5+.5;
+    if(fl>.72){ctx.fillStyle=`rgba(239,247,246,${((fl-.72)*2.5*a).toFixed(2)})`;ctx.fillRect(vx*PX,vy*PX,PX,PX);}
+  }
+}
+function particleOverlay(color,maxA){
+  for(let i=0;i<24;i++){
+    const vx=(i*47+7)%GW,vy=((i*29+5)%GH+Math.floor(frame*.010+i*2.5))%GH;
+    const fl=Math.sin(frame*.016+i*1.4)*.5+.5;
+    if(fl>.65){ctx.fillStyle=`rgba(239,247,246,${((fl-.65)*maxA).toFixed(2)})`;ctx.fillRect(vx*PX,vy*PX,PX,PX);}
+  }
+}
+function starOverlay(color,maxA){
+  for(let i=0;i<20;i++){
+    const vx=3+(i*17)%GW,vy=2+(i*11)%(Math.floor(GH*.55));
+    const fl=Math.sin(frame*.018+i*.9)*.5+.5;
+    if(fl>.80){ctx.fillStyle=`rgba(239,247,246,${((fl-.80)*maxA*2.5).toFixed(2)})`;ctx.fillRect(vx*PX,vy*PX,PX,PX);}
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  SCENE PRESETS
+// ═══════════════════════════════════════════════════
+const PRESETS=[
+  {id:'water_lotus', icon:'🌊',label:'天青莲池', bg:'water', elems:['lotus','goldfish','lilypad','dragonfly']},
+  {id:'sunset_bay',  icon:'🌅',label:'暖霞海湾', bg:'sunset',elems:['jellyfish','koi','coral','seahorse']},
+  {id:'cherry_garden',icon:'🌸',label:'樱花飞雪',bg:'garden',elems:['cherry','butterfly','petals','firefly']},
+  {id:'mint_cloud',  icon:'☁️',label:'薄荷云海', bg:'sky',   elems:['cloud_big','bird','cloud_sm','dragonfly']},
+  {id:'guava_pond',  icon:'🍃',label:'番石榴园', bg:'pond',  elems:['lotus','koi','lilypad','dragonfly']},
+  {id:'deep_forest', icon:'🌲',label:'深林仙境', bg:'ocean', elems:['mushroom','rabbit','fern','firefly']},
+];
+let curPreset=PRESETS[0].id;
+
+// ═══════════════════════════════════════════════════
+//  SCENE STATE
+// ═══════════════════════════════════════════════════
+let selected=new Set(PRESETS[0].elems);
+let scene={pads:[],movers:[],blooms:[],ambients:[],ripples:[],bloomPhase:0};
+function mkRng(s){let v=Math.abs(s)*123457+1;return()=>{v=(v*1664525+1013904223)>>>0;return v/4294967296;};}
+function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v));}
+
+function buildScene(){
+  const rng=mkRng([...selected].reduce((h,k)=>h+k.charCodeAt(0)*31,0)||42);
+  const blooms=[...selected].filter(k=>ELEMS[k]?.cat==='bloom');
+  const movers=[...selected].filter(k=>ELEMS[k]?.cat==='mover');
+  const pads  =[...selected].filter(k=>ELEMS[k]?.cat==='pad');
+  const ambs  =[...selected].filter(k=>ELEMS[k]?.cat==='ambient');
+  // Density scale: relative to base PX=4; sqrt keeps growth gentle
+  const ds=Math.sqrt(PX/4);
+  scene.pads=[];
+  if(pads.length){
+    const target=Math.round((32+pads.length*6)*ds);const placed=[];let tries=0;
+    while(placed.length<target&&tries<target*30){
+      tries++;
+      const ek=pads[tries%pads.length],E=ELEMS[ek];
+      const spName=E.sprSet[(tries>>1)%E.sprSet.length];
+      const s=SP[spName],sw=s.frames[0][0].length,sh=s.frames[0].length;
+      const px=clamp(rng()*GW,2,GW-sw-2),py=clamp(rng()*GH*.90+GH*.05,2,GH-sh-2);
+      // clearance uses half sprite size since pads render at PX/2
+      const ok=placed.every(p=>Math.abs(p.x-px)>sw*0.65||Math.abs(p.y-py)>sh*0.65);
+      if(ok)placed.push({spr:spName,x:px,y:py,bob:rng()*Math.PI*2,bobSpd:.003+rng()*.004,bobAmp:.40+rng()*.45});
+    }
+    scene.pads=placed.sort((a,b)=>a.y-b.y);
+  }
+  scene.movers=[];
+  if(movers.length){
+    const mc=Math.round((12+movers.length*5)*ds);
+    for(let i=0;i<mc;i++){
+      const ek=movers[i%movers.length],E=ELEMS[ek],spName=E.sprSet[i%E.sprSet.length];
+      const[vs,vf]=E.speed,dir=i%2===0?1:-1;
+      // ×2 speed to compensate for doubled grid (keeps same on-screen velocity)
+      const animRate=ek==='butterfly'?18:12; // butterfly flaps at 2/3 speed
+      scene.movers.push({spr:spName,x:rng()*GW,y:GH*.05+rng()*GH*.90,vx:(vs+rng()*(vf-vs))*dir*1.6,bobP:rng()*Math.PI*2,bobAmp:.05+rng()*.12,bobSpd:.015+rng()*.020,anim:0,animT:0,flip:dir<0,animRate});
+    }
+  }
+  scene.blooms=[];scene.bloomPhase=0;
+  if(blooms.length){
+    const ek=blooms[0],E=ELEMS[ek];
+    const count=Math.round(37*ds);
+    // Bloom pixel size scales with PX so blooms stay proportional on large screens
+    const scaledMaxPx=Math.max(1,Math.round(E.maxPx*(PX/4)*0.72));
+    const mainSpr=E.sprSet[Math.floor(rng()*(E.sprSet.length-1))];
+    const ltSpr=E.sprSet[E.sprSet.length-1];
+    for(let i=0;i<count;i++){
+      const spr=(i%5===2)?ltSpr:mainSpr;
+      const mg=PX*2;
+      scene.blooms.push({ax:clamp((W/(count+1))*(i+1)+(rng()-.5)*W*.22,mg,W-mg),ay:clamp(H*.05+rng()*H*.90,mg,H-mg),phOff:(i/count)*Math.PI*.9+(rng()-.5)*.4,spr,maxPx:scaledMaxPx});
+    }
+  }
+  scene.ambients=[];
+  for(const ek of ambs){
+    const E=ELEMS[ek];
+    const baseN=ek==='star'?56:ek==='fall_petal'?40:16;
+    const n=Math.round(baseN*ds);
+    for(let i=0;i<n;i++){
+      const x=rng()*GW;
+      const y=ek==='star'?rng()*GH:ek==='fall_petal'?rng()*GH*.3:rng()*GH*.85;
+      scene.ambients.push({spr:E.sprSet[i%E.sprSet.length],x,y,dx:(rng()-.5)*.12,dy:(rng()-.5)*.08,ph:rng()*Math.PI*2,anim:0,animT:0,ek});
+    }
+  }
+  scene.ripples=[];frame=0;
+  document.getElementById('info').textContent=[...selected].map(k=>ELEMS[k].label).join(' · ')||'✦';
+}
+
+// ═══════════════════════════════════════════════════
+//  UPDATE & RENDER
+// ═══════════════════════════════════════════════════
+function update(){
+  scene.bloomPhase+=BGS[curBG].bloomSpeed*spd*1.5;
+  for(const f of scene.movers){
+    f.x+=f.vx*spd;f.bobP+=f.bobSpd*spd;f.y+=Math.sin(f.bobP)*f.bobAmp*spd;
+    f.animT+=spd;if(f.animT>=(f.animRate||12)){f.animT=0;f.anim=(f.anim+1)%2;}
+    const sw=SP[f.spr].frames[0][0].length;
+    if(f.vx>0&&f.x>GW+3)f.x=-sw-3;if(f.vx<0&&f.x<-sw-3)f.x=GW+3;
+    f.y=clamp(f.y,1,GH-SP[f.spr].frames[0].length-1);
+  }
+  for(const p of scene.pads)p.bob+=p.bobSpd*spd;
+  for(const d of scene.ambients){
+    if(d.ek==='star'){
+      // Stars: stationary twinkle only
+      d.ph+=.022*spd;
+      d.animT+=spd;if(d.animT>=6+Math.floor(d.ph%5)){d.animT=0;d.anim=(d.anim+1)%2;}
+    } else if(d.ek==='fall_petal'){
+      // Petals: drift sideways + fall downward
+      d.ph+=.014*spd;
+      d.x+=Math.sin(d.ph*.35)*.20;d.y+=.14*spd;
+      d.animT+=spd;if(d.animT>=14){d.animT=0;d.anim=(d.anim+1)%2;}
+      if(d.y>GH*.98){d.y=Math.random()*GH*.08;d.x=Math.random()*GW;}// reset at bottom
+      if(d.x<0)d.x=GW;if(d.x>GW)d.x=0;
+    } else {
+      d.ph+=.018*spd;d.x+=d.dx+Math.sin(d.ph*.6)*.08;d.y+=d.dy+Math.cos(d.ph*.4)*.06;
+      d.animT+=spd;const nf=SP[d.spr].frames.length;if(d.animT>=10){d.animT=0;d.anim=(d.anim+1)%nf;}
+      if(d.x<0)d.x=GW;if(d.x>GW)d.x=0;if(d.y<0)d.y=GH*.82;if(d.y>GH*.82)d.y=0;
+    }
+  }
+  if(frame%Math.ceil(88/spd)===0)
+    scene.ripples.push({x:(8+Math.random()*(GW-16))*PX,y:(8+Math.random()*(GH-16))*PX,r:0,maxR:(6+Math.random()*7)*PX});
+  scene.ripples=scene.ripples.filter(r=>r.r<r.maxR);
+}
+
+function render(){
+  ctx.clearRect(0,0,W,H);drawBG();
+  for(const r of scene.ripples){
+    r.r+=.24*spd;const t=r.r/r.maxR;
+    ctx.save();ctx.globalAlpha=(1-t)*.25;ctx.strokeStyle='#EFF7F6';ctx.lineWidth=PX*.3;
+    ctx.beginPath();ctx.ellipse(r.x,r.y,r.r,r.r*.26,0,0,Math.PI*2);ctx.stroke();ctx.restore();
+  }
+  for(const f of scene.movers){
+    const fr=SP[f.spr].frames[f.anim];
+    const mps=Math.max(1,Math.round(PX*0.6));
+    const cols=fr[0].length,rows=fr.length;
+    const ax=(f.x+cols/2)*PX, ay=(f.y+rows/2)*PX;
+    ctx.save();ctx.globalAlpha=.10;ctx.fillStyle='#000';
+    const sox=Math.round(ax-cols*mps/2)+2,soy=Math.round(ay-rows*mps/2)+4;
+    for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){if(!fr[r][c])continue;ctx.fillRect(sox+(f.flip?cols-1-c:c)*mps,soy+r*mps,mps,mps);}
+    ctx.restore();
+    drawSpriteAt(fr,SP[f.spr].colors,ax,ay,mps,f.flip);
+  }
+  for(const p of scene.pads){
+    const ps=Math.max(1,Math.round(PX/2));
+    const bob=Math.sin(p.bob)*p.bobAmp,sd=SP[p.spr].frames[0];
+    const cols=sd[0].length,rows=sd.length;
+    const ax=(p.x+cols/2)*PX,ay=(p.y+bob+rows/2)*PX;
+    // shadow
+    ctx.save();ctx.globalAlpha=.10;ctx.fillStyle='#000';
+    const sox=Math.round(ax-cols*ps/2)+2,soy=Math.round(ay-rows*ps/2)+4;
+    for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){if(!sd[r][c])continue;ctx.fillRect(sox+c*ps,soy+r*ps,ps,ps);}
+    ctx.restore();
+    drawSpriteAt(sd,SP[p.spr].colors,ax,ay,ps);
+  }
+  for(const l of scene.blooms){
+    const bv=bloomVal(scene.bloomPhase+l.phOff);if(bv<.03)continue;
+    drawSpriteAt(SP[l.spr].frames[0],SP[l.spr].colors,l.ax,l.ay,Math.max(1,Math.round(bv*l.maxPx)),false,Math.min(1,bv*1.8));
+  }
+  for(const d of scene.ambients){
+    const ff=d.ek==='firefly';
+    const isStar=d.ek==='star';
+    let alpha=1;
+    if(ff)alpha=Math.sin(frame*.09+d.ph*3)*.5+.5;
+    else if(isStar)alpha=Math.max(.08,Math.sin(frame*.04+d.ph*2.5)*.5+.5);
+    drawSprite(SP[d.spr].frames[d.anim],SP[d.spr].colors,d.x,d.y,false,alpha);
+  }
+  const vig=ctx.createRadialGradient(W/2,H/2,W*.18,W/2,H/2,W*.82);
+  vig.addColorStop(0,'rgba(0,0,0,0)');vig.addColorStop(1,'rgba(0,0,8,.38)');
+  ctx.fillStyle=vig;ctx.fillRect(0,0,W,H);
+}
+
+function loop(){
+  if(!paused){loopAcc+=spd;while(loopAcc>=1){update();frame++;loopAcc--;}render();}
+  requestAnimationFrame(loop);
+}
+
+// ═══════════════════════════════════════════════════
+//  GIF ENCODER — pure JS GIF89a
+// ═══════════════════════════════════════════════════
+function u16(n){return[n&0xFF,(n>>8)&0xFF];}
+function lzwEncode(pixels,minCS){
+  const clr=1<<minCS,eof=clr+1,MAX=4096;
+  const bits=[];let bb=0,bl=0,cs=minCS+1,next=eof+1,mx=1<<cs;
+  const ch=new Array(MAX).fill(null);
+  function reset(){for(let i=0;i<MAX;i++)ch[i]=null;next=eof+1;cs=minCS+1;mx=1<<cs;}
+  function emit(c){bb|=c<<bl;bl+=cs;while(bl>=8){bits.push(bb&0xFF);bb>>>=8;bl-=8;}}
+  reset();emit(clr);
+  let buf=pixels[0];
+  for(let i=1;i<pixels.length;i++){
+    const px=pixels[i];
+    if(!ch[buf])ch[buf]=new Map();
+    const kid=ch[buf].get(px);
+    if(kid!==undefined){buf=kid;}
+    else{emit(buf);if(next<MAX){ch[buf].set(px,next);next++;if(next>mx&&cs<12){cs++;mx<<=1;}}else{emit(clr);reset();}buf=px;}
+  }
+  emit(buf);emit(eof);if(bl>0)bits.push(bb&0xFF);
+  const out=[minCS];
+  for(let i=0;i<bits.length;i+=255){const end=Math.min(i+255,bits.length);out.push(end-i);for(let j=i;j<end;j++)out.push(bits[j]);}
+  out.push(0);return out;
+}
+function buildPalette(imgData){
+  const d=imgData.data,freq=new Map();
+  for(let i=0;i<d.length;i+=4){const k=(d[i]<<16)|(d[i+1]<<8)|d[i+2];freq.set(k,(freq.get(k)||0)+1);}
+  const pal=[...freq.entries()].sort((a,b)=>b[1]-a[1]).slice(0,255).map(([k])=>[(k>>16)&0xFF,(k>>8)&0xFF,k&0xFF]);
+  while(pal.length<256)pal.push([0,0,0]);
+  return pal;
+}
+function quantizeFrame(imgData,pal,cache){
+  const d=imgData.data,n=d.length/4,out=new Uint8Array(n);
+  for(let i=0;i<n;i++){
+    const r=d[i*4],g=d[i*4+1],b=d[i*4+2],key=(r<<16)|(g<<8)|b;
+    let idx=cache.get(key);
+    if(idx===undefined){
+      let best=0,bd=1e18;
+      for(let j=0;j<pal.length;j++){const p=pal[j],dr=r-p[0],dg=g-p[1],db=b-p[2],dd=dr*dr+dg*dg+db*db;if(dd<bd){bd=dd;best=j;if(dd===0)break;}}
+      cache.set(key,best);idx=best;
+    }
+    out[i]=idx;
+  }
+  return out;
+}
+function buildGIF(frames,w,h,delay){
+  const out=[];
+  const push=(...b)=>out.push(...b);
+  const pal=buildPalette(frames[0]),cache=new Map();
+  push(0x47,0x49,0x46,0x38,0x39,0x61);
+  push(...u16(w),...u16(h),0xF7,0x00,0x00);
+  for(const c of pal)push(c[0],c[1],c[2]);
+  push(0x21,0xFF,0x0B,0x4E,0x45,0x54,0x53,0x43,0x41,0x50,0x45,0x32,0x2E,0x30,0x03,0x01,0x00,0x00,0x00);
+  for(const imgData of frames){
+    const idx=quantizeFrame(imgData,pal,cache);
+    push(0x21,0xF9,0x04,0x00,...u16(delay),0x00,0x00);
+    push(0x2C,...u16(0),...u16(0),...u16(w),...u16(h),0x00);
+    push(...lzwEncode(idx,8));
+  }
+  push(0x3B);return new Uint8Array(out);
+}
+let gifRunning=false;
+async function startGIF(){
+  if(gifRunning)return;gifRunning=true;
+  const btn=document.getElementById('gifbtn');
+  btn.classList.add('rec');btn.disabled=true;
+  const TOTAL=48,DELAY=8;
+  const GW_EX=140,GH_EX=90,GIF_W=GW_EX*4,GIF_H=GH_EX*4; // fixed 560×360
+  const captured=[];
+  const savePhase=scene.bloomPhase,saveFrame=frame;
+  paused=true;
+  // Temp offscreen canvas at fixed export resolution
+  const tmp=document.createElement('canvas');tmp.width=GIF_W;tmp.height=GIF_H;
+  const tctx=tmp.getContext('2d');
+  for(let i=0;i<TOTAL;i++){
+    update();frame++;render();
+    tctx.drawImage(C,0,0,GIF_W,GIF_H);
+    captured.push(tctx.getImageData(0,0,GIF_W,GIF_H));
+    btn.textContent=`⏺ ${i+1}/${TOTAL}`;
+    if(i%6===0)await new Promise(r=>setTimeout(r,0));
+  }
+  scene.bloomPhase=savePhase;frame=saveFrame;paused=false;
+  btn.textContent='🔧 编码...';await new Promise(r=>setTimeout(r,0));
+  const gif=buildGIF(captured,GIF_W,GIF_H,DELAY);
+  const blob=new Blob([gif],{type:'image/gif'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='pixel-world.gif';a.click();
+  URL.revokeObjectURL(url);
+  gifRunning=false;btn.classList.remove('rec');btn.disabled=false;btn.textContent='⏺ GIF';
+}
+
+// ── Video export via MediaRecorder ───────────────────
+let videoRunning=false;
+async function startVideo(){
+  if(videoRunning||gifRunning)return;
+  const btn=document.getElementById('vidbtn');
+  if(!C.captureStream){btn.textContent='✗ 不支持';setTimeout(()=>btn.textContent='▶ 视频',2000);return;}
+  const dur=parseInt(document.getElementById('vidDur').value)||15;
+  videoRunning=true;btn.classList.add('rec');btn.disabled=true;
+  const stream=C.captureStream(30);
+  const mime=(['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm']
+    .find(t=>MediaRecorder.isTypeSupported(t)))||'video/webm';
+  const rec=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:12000000});
+  const chunks=[];
+  rec.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data);};
+  rec.onstop=async()=>{
+    stream.getTracks().forEach(t=>t.stop());
+    const blob=new Blob(chunks,{type:mime});
+    btn.textContent='保存中...';
+    if(window.pywebview){
+      // Send to Python for MP4 conversion + save to Downloads
+      const reader=new FileReader();
+      reader.onload=async()=>{
+        const b64=reader.result.split(',')[1];
+        const r=await window.pywebview.api.save_video(b64);
+        btn.textContent=r.ok?`✓ ${r.format?.toUpperCase()||'视频'}已保存`:'✗ 保存失败';
+        setTimeout(()=>{videoRunning=false;btn.classList.remove('rec');btn.disabled=false;btn.textContent='▶ 视频';},2500);
+      };
+      reader.readAsDataURL(blob);
+    } else {
+      // Browser fallback: direct download
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');a.href=url;a.download='pixel-world.webm';a.click();
+      setTimeout(()=>URL.revokeObjectURL(url),1000);
+      videoRunning=false;btn.classList.remove('rec');btn.disabled=false;btn.textContent='▶ 视频';
+    }
+  };
+  rec.start(200);
+  // Countdown
+  let left=dur;
+  btn.textContent=`⏹ ${left}s`;
+  const tick=setInterval(()=>{
+    left--;btn.textContent=`⏹ ${left}s`;
+    if(left<=0){clearInterval(tick);rec.stop();}
+  },1000);
+}
+
+// ═══════════════════════════════════════════════════
+//  UI
+// ═══════════════════════════════════════════════════
+let curCat='bloom';
+
+function buildBGTabs(){
+  const el=document.getElementById('bgTabs');el.innerHTML='';
+  for(const[k,B] of Object.entries(BGS)){
+    const b=document.createElement('button');b.className='bg-tab'+(k===curBG?' on':'');
+    b.textContent=B.icon+' '+B.label;b.style.color=B.color;
+    b.onclick=()=>{curBG=k;curPreset='';buildBGTabs();buildPresets();buildScene();};
+    el.appendChild(b);
+  }
+}
+function buildCatTabs(){
+  const el=document.getElementById('catTabs');el.innerHTML='';
+  for(const[k,C] of Object.entries(CATS)){
+    const b=document.createElement('button');b.className='cat-tab'+(k===curCat?' on':'');
+    b.setAttribute('data-cat',k);b.textContent=C.label+(C.single?' ·单选':'');
+    b.onclick=()=>{curCat=k;buildCatTabs();buildElemRow();};el.appendChild(b);
+  }
+}
+function buildElemRow(){
+  const el=document.getElementById('elemRow');el.innerHTML='';
+  for(const[k,E] of Object.entries(ELEMS)){
+    if(E.cat!==curCat)continue;
+    const c=document.createElement('span');c.className='elem-chip'+(selected.has(k)?' on':'');
+    c.textContent=E.icon+' '+E.label;
+    if(selected.has(k))c.style.color=CATS[E.cat].color;
+    c.onclick=()=>toggleElem(k);el.appendChild(c);
+  }
+}
+function buildActiveTags(){
+  const el=document.getElementById('activeTags');el.innerHTML='';
+  for(const k of selected){
+    const E=ELEMS[k],col=CATS[E.cat].color,t=document.createElement('span');
+    t.className='tag';t.style.cssText=`color:${col};border-color:${col}44;background:${col}14`;
+    t.innerHTML=`${E.icon} ${E.label}<span class="rm" onclick="removeElem('${k}')">×</span>`;
+    el.appendChild(t);
+  }
+}
+function buildPresets(){
+  const el=document.getElementById('presetBtns');el.innerHTML='';
+  for(const P of PRESETS){
+    const b=document.createElement('button');b.className='preset-btn'+(curPreset===P.id?' on':'');
+    b.textContent=P.icon+' '+P.label;
+    b.onclick=()=>applyPreset(P);el.appendChild(b);
+  }
+}
+function applyPreset(P){
+  curPreset=P.id;curBG=P.bg;
+  selected=new Set(P.elems);
+  buildBGTabs();buildPresets();buildElemRow();buildActiveTags();buildScene();
+}
+function toggleElem(k){
+  const E=ELEMS[k],C=CATS[E.cat];
+  if(C.single){for(const sk of[...selected])if(ELEMS[sk]?.cat===E.cat)selected.delete(sk);selected.add(k);}
+  else{if(selected.has(k))selected.delete(k);else selected.add(k);}
+  curPreset='';buildPresets();buildElemRow();buildActiveTags();buildScene();
+}
+function removeElem(k){selected.delete(k);curPreset='';buildPresets();buildElemRow();buildActiveTags();buildScene();}
+function replayBloom(){scene.bloomPhase=0;scene.ripples=[];}
+function togglePause(){paused=!paused;document.getElementById('pbtn').textContent=paused?'▶ 继续':'⏸ 暂停';}
+function cycleSpeed(){spdIdx=(spdIdx+1)%SPDS.length;spd=SPDS[spdIdx];document.getElementById('sbtn').textContent=SPDL[spdIdx];}
+function exportPNG(){const a=document.createElement('a');a.download='pixel-world.png';a.href=C.toDataURL();a.click();}
+
+// Init with first preset
+applyPreset(PRESETS[0]);
+buildCatTabs();buildElemRow();
+
+// ── Wallpaper mode (loaded by wallpaper_live.py) ─────
+// Detected via location.hash — WebView2 file:// doesn't support ?query params
+(function(){
+  if(!location.hash.includes('wallpaper'))return;
+  // Hide panel entirely
+  document.getElementById('panel').style.display='none';
+  fitCanvas();
+  // Load scene config from pywebview API (async)
+  async function _applyWallpaperConfig(){
+    try{
+      if(!window.pywebview)return;
+      const b64=await window.pywebview.api.get_config();
+      const cfg=JSON.parse(atob(b64||'e30='));
+      if(cfg.bg&&BGS[cfg.bg])curBG=cfg.bg;
+      if(cfg.elems&&cfg.elems.length)selected=new Set(cfg.elems.filter(k=>ELEMS[k]));
+      buildBGTabs();buildPresets();buildElemRow();buildActiveTags();buildScene();
+    }catch(e){console.warn('wallpaper config error',e);}
+  }
+  // pywebview bridge may not be ready immediately
+  if(window.pywebview){_applyWallpaperConfig();}
+  else{window.addEventListener('pywebviewready',_applyWallpaperConfig,{once:true});}
+})();
+
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

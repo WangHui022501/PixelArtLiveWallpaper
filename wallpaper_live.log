@@ -1,11 +1,11 @@
-[23:30:35] start cfg_len=88
-[23:30:35] embed PID=23592  screen=1920x1080
-[23:30:37] own HWND=5051474 after 1.2s
-[23:30:38] Progman=65866
-[23:30:38] Icons parent: hwnd=65866  class=Progman
-[23:30:38] before: above=4655760(IME) below=4327324(GDI+ Hook Window Class) progman_steps_above=-1
-[23:30:38] after NOTOPMOST: above=3281798(IME) below=4327324(GDI+ Hook Window Class) progman_steps_above=-1
-[23:30:38] SetWindowPos HWND_BOTTOM ok=1
-[23:30:38] after HWND_BOTTOM: above=3281798(IME) below=65866(Progman) progman_steps_above=-1
-[23:30:38] exstyle=0x08010080  TOPMOST=False
-[23:30:39] after re-apply: above=3281798(IME) below=65866(Progman) progman_steps_above=-1
+[10:53:10] start cfg_len=84
+[10:53:10] embed PID=18856  screen=1920x1080
+[10:53:12] own HWND=327862 after 1.0s
+[10:53:13] Progman=65886
+[10:53:14]   Progman child[0] hwnd=65890 class=SHELLDLL_DefView has_SHELLDLL_DefView=False
+[10:53:14]   Progman child[1] hwnd=67836 class=WorkerW has_SHELLDLL_DefView=False
+[10:53:14] WorkerW child=67836 has_SDV=False
+[10:53:14] Using wallpaper WorkerW=67836
+[10:53:14] SetParent to WorkerW: old_parent=65548
+[10:53:14] MoveWindow ok=1
+[10:53:14] Done (WorkerW mode)

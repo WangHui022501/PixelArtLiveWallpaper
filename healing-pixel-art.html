@@ -704,7 +704,7 @@ function buildScene(){
   scene.blooms=[];scene.bloomPhase=0;
   if(blooms.length){
     const ek=blooms[0],E=ELEMS[ek];
-    const count=Math.round(37*ds);
+    const count=Math.round(26*ds);
     // Bloom pixel size scales with PX so blooms stay proportional on large screens
     const scaledMaxPx=Math.max(1,Math.round(E.maxPx*(PX/4)*0.72));
     const mainSpr=E.sprSet[Math.floor(rng()*(E.sprSet.length-1))];
